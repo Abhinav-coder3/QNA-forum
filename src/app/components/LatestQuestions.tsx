@@ -6,25 +6,33 @@ import { Query } from "node-appwrite";
 import React from "react";
 
 const LatestQuestions = async () => {
-    const questions = await databases.listDocuments(db, questionCollection, [
-        Query.limit(5),
-        Query.orderDesc("$createdAt"),
-    ]);
-    console.log("Fetched Questions:", questions);
+    let questions = { documents: [] as any[] };
+    try {
+        questions = await databases.listDocuments(db, questionCollection, [
+            Query.limit(5),
+            Query.orderDesc("$createdAt"),
+        ]);
+    } catch (err) {
+        console.error("LatestQuestions listDocuments error:", err);
+    }
 
     questions.documents = await Promise.all(
         questions.documents.map(async ques => {
             const [author, answers, votes] = await Promise.all([
-                users.get<UserPrefs>(ques.authorId),
+                users.get<UserPrefs>(ques.authorId).catch(() => ({
+                    $id: ques.authorId,
+                    name: "Anonymous User",
+                    prefs: { reputation: 0 },
+                })),
                 databases.listDocuments(db, answerCollection, [
                     Query.equal("questionId", ques.$id),
-                    Query.limit(1), // for optimization
-                ]),
+                    Query.limit(1),
+                ]).catch(() => ({ total: 0, documents: [] })),
                 databases.listDocuments(db, voteCollection, [
                     Query.equal("type", "question"),
                     Query.equal("typeId", ques.$id),
-                    Query.limit(1), // for optimization
-                ]),
+                    Query.limit(1),
+                ]).catch(() => ({ total: 0, documents: [] })),
             ]);
 
             return {
@@ -33,8 +41,8 @@ const LatestQuestions = async () => {
                 totalVotes: votes.total,
                 author: {
                     $id: author.$id,
-                    reputation: author.prefs.reputation,
-                    name: author.name,
+                    reputation: author.prefs?.reputation ?? 0,
+                    name: author.name || "Anonymous User",
                 },
             };
         })

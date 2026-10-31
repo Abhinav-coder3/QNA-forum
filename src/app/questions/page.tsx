@@ -31,21 +31,41 @@ const Page = async ({
             ])
         );
 
-    const questions = await databases.listDocuments(db, questionCollection, queries);
+    let questions = { total: 0, documents: [] as any[] };
+    try {
+        questions = await databases.listDocuments(db, questionCollection, queries);
+    } catch (err) {
+        console.error("Failed to list questions:", err);
+        if (searchParams.search) {
+            try {
+                questions = await databases.listDocuments(db, questionCollection, [
+                    Query.orderDesc("$createdAt"),
+                    Query.offset((+searchParams.page - 1) * 25),
+                    Query.limit(25),
+                ]);
+            } catch (fallbackErr) {
+                console.error("Fallback query failed:", fallbackErr);
+            }
+        }
+    }
 
     questions.documents = await Promise.all(
         questions.documents.map(async ques => {
             const [author, answers, votes] = await Promise.all([
-                users.get<UserPrefs>(ques.authorId),
+                users.get<UserPrefs>(ques.authorId).catch(() => ({
+                    $id: ques.authorId,
+                    name: "Anonymous User",
+                    prefs: { reputation: 0 },
+                })),
                 databases.listDocuments(db, answerCollection, [
                     Query.equal("questionId", ques.$id),
                     Query.limit(1), // for optimization
-                ]),
+                ]).catch(() => ({ total: 0, documents: [] })),
                 databases.listDocuments(db, voteCollection, [
                     Query.equal("type", "question"),
                     Query.equal("typeId", ques.$id),
                     Query.limit(1), // for optimization
-                ]),
+                ]).catch(() => ({ total: 0, documents: [] })),
             ]);
 
             return {
@@ -54,8 +74,8 @@ const Page = async ({
                 totalVotes: votes.total,
                 author: {
                     $id: author.$id,
-                    reputation: author.prefs.reputation,
-                    name: author.name,
+                    reputation: author.prefs?.reputation ?? 0,
+                    name: author.name || "Anonymous User",
                 },
             };
         })

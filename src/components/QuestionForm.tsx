@@ -56,6 +56,15 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState("");
 
+    React.useEffect(() => {
+        if (user?.$id) {
+            setFormData(prev => ({
+                ...prev,
+                authorId: prev.authorId || user.$id,
+            }));
+        }
+    }, [user?.$id]);
+
     const loadConfetti = (timeInMS = 3000) => {
         const end = Date.now() + timeInMS; // 3 seconds
         const colors = ["#a786ff", "#fd8bbc", "#eca184", "#f8deb1"];

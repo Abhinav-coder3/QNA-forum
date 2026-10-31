@@ -5,6 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 import { cn } from "@/lib/utils";
 import Header from "./components/Header";
+import AuthSync from "@/components/AuthSync";
+
 export const metadata: Metadata = {
   title: "RiverFlow — Ask. Answer. Learn.",
   description: "RiverFlow is a community-driven Q&A platform for developers. Ask questions, share knowledge, and grow together.",
@@ -18,8 +20,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={cn(inter.className, "dark:bg-black dark:text-white")}>
+        <AuthSync />
         <Header />
-        {children}</body>
+        {children}
+      </body>
     </html>
   );
 }

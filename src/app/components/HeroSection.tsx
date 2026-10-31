@@ -8,19 +8,36 @@ import { storage } from "@/models/client/config";
 import HeroSectionHeader from "./HeroSectionHeader";
 
 export default async function HeroSection() {
-    const questions = await databases.listDocuments(db, questionCollection, [
-        Query.orderDesc("$createdAt"),
-        Query.limit(15),
-    ]);
+    let questions: { documents: any[] } = { documents: [] };
+    try {
+        questions = await databases.listDocuments(db, questionCollection, [
+            Query.orderDesc("$createdAt"),
+            Query.limit(15),
+        ]);
+    } catch (error) {
+        console.error("HeroSection listDocuments error:", error);
+    }
+
+    const products = questions.documents.map(q => {
+        let thumbnail = "/placeholder.svg";
+        if (q.attachmentId) {
+            try {
+                thumbnail = storage.getFilePreview(questionAttachmentBucket, q.attachmentId).href;
+            } catch {
+                thumbnail = "/placeholder.svg";
+            }
+        }
+        return {
+            title: q.title,
+            link: `/questions/${q.$id}/${slugify(q.title)}`,
+            thumbnail,
+        };
+    });
 
     return (
         <HeroParallax
             header={<HeroSectionHeader />}
-            products={questions.documents.map(q => ({
-                title: q.title,
-                link: `/questions/${q.$id}/${slugify(q.title)}`,
-                thumbnail: storage.getFilePreview(questionAttachmentBucket, q.attachmentId).href,
-            }))}
+            products={products}
         />
     );
 }

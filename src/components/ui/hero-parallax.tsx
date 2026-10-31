@@ -3,6 +3,7 @@ import React from "react";
 import { motion, useScroll, useTransform, useSpring, MotionValue } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export const HeroParallax = ({
     products,
@@ -41,10 +42,14 @@ export const HeroParallax = ({
     return (
         <div
             ref={ref}
-            className="relative flex h-[300vh] flex-col self-auto overflow-hidden py-40 antialiased [perspective:1000px] [transform-style:preserve-3d]"
+            className={cn(
+                "relative flex flex-col self-auto overflow-hidden py-40 antialiased [perspective:1000px] [transform-style:preserve-3d]",
+                products.length > 0 ? "h-[300vh]" : "h-auto pb-10"
+            )}
         >
             {header}
-            <motion.div
+            {products.length > 0 && (
+                <motion.div
                 style={{
                     rotateX,
                     rotateZ,
@@ -73,6 +78,7 @@ export const HeroParallax = ({
                     ))}
                 </motion.div>
             </motion.div>
+            )}
         </div>
     );
 };

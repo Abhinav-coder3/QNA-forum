@@ -27,25 +27,25 @@ export default async function createQuestionCollection(){
   console.log("Question Attributes created")
 
   // create Indexes
-
-  /*
-  await Promise.all([
-    databases.createIndex(
-      db,
-      questionCollection,
-      "title",
-      IndexType.Fulltext,
-      ["title"],
-      ['asc']
-    ),
-    databases.createIndex(
-      db,
-      questionCollection,
-      "content",
-      IndexType.Fulltext,
-      ["content"],
-      ['asc']
-    )
-  ])
-    */
+  try {
+    await Promise.all([
+      databases.createIndex(
+        db,
+        questionCollection,
+        "title_fulltext",
+        IndexType.Fulltext,
+        ["title"]
+      ),
+      databases.createIndex(
+        db,
+        questionCollection,
+        "content_fulltext",
+        IndexType.Fulltext,
+        ["content"]
+      )
+    ])
+    console.log("Question Indexes created")
+  } catch (indexError) {
+    console.log("Index creation note:", indexError)
+  }
 }

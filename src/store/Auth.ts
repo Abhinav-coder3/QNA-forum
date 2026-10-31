@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { persist } from "zustand/middleware";
 
-import {AppwriteException, ID, Models} from "appwrite"
+import {AppwriteException, ID, Models, OAuthProvider} from "appwrite"
 import { account } from "@/models/client/config";
 
 
@@ -18,6 +18,10 @@ interface IAuthStore {
 
   setHydrated(): void;
   verfiySession(): Promise<void>;
+  loginWithOAuth(provider: OAuthProvider): Promise<{
+    success: boolean;
+    error?: AppwriteException | null;
+  }>;
   login(
     email: string,
     password: string
@@ -53,11 +57,40 @@ export const useAuthStore = create<IAuthStore>()(
 
       async verfiySession() {
         try {
-          const session = await account.getSession("current")
-          set({session})
-
+          const session = await account.getSession("current");
+          let user = null;
+          let jwt = null;
+          try {
+            user = await account.get<UserPrefs>();
+            if (!user.prefs?.reputation) {
+              await account.updatePrefs<UserPrefs>({ reputation: 0 });
+            }
+            const jwtRes = await account.createJWT();
+            jwt = jwtRes.jwt;
+          } catch (e) {
+            console.log("Could not fetch user/jwt:", e);
+          }
+          set({ session, user, jwt });
         } catch (error) {
-          console.log(error)
+          set({ session: null, user: null, jwt: null });
+        }
+      },
+
+      async loginWithOAuth(provider: OAuthProvider) {
+        try {
+          const origin = typeof window !== "undefined" ? window.location.origin : "";
+          await account.createOAuth2Session(
+            provider,
+            `${origin}/`,
+            `${origin}/login`
+          );
+          return { success: true };
+        } catch (error) {
+          console.error("OAuth error:", error);
+          return {
+            success: false,
+            error: error instanceof AppwriteException ? error : null,
+          };
         }
       },
 

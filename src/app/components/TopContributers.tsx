@@ -39,7 +39,7 @@ const Notification = ({ user }: { user: Models.User<UserPrefs> }) => {
                     <p className="text-sm font-normal dark:text-white/60">
                         <span>Reputation</span>
                         <span className="mx-1">·</span>
-                        <span className="text-xs text-gray-500">{user.prefs.reputation}</span>
+                        <span className="text-xs text-gray-500">{user.prefs?.reputation ?? 0}</span>
                     </p>
                 </div>
             </div>
@@ -48,7 +48,12 @@ const Notification = ({ user }: { user: Models.User<UserPrefs> }) => {
 };
 
 export default async function TopContributers() {
-    const topUsers = await users.list<UserPrefs>([Query.limit(10)]);
+    let topUsers = { users: [] as Models.User<UserPrefs>[] };
+    try {
+        topUsers = await users.list<UserPrefs>([Query.limit(10)]);
+    } catch (err) {
+        console.error("TopContributors users.list error:", err);
+    }
 
     return (
         <div className="bg-background relative flex max-h-[400px] min-h-[400px] w-full max-w-[32rem] flex-col overflow-hidden rounded-lg bg-white/10 p-6 shadow-lg">

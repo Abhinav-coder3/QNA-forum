@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { IconBrandGithub, IconBrandGoogle } from "@tabler/icons-react";
 import { useAuthStore } from "@/store/Auth";
+import { OAuthProvider } from "appwrite";
 import Link from "next/link";
 
 const BottomGradient = () => {
@@ -28,9 +29,19 @@ const LabelInputContainer = ({
 };
 
 export default function Register() {
-    const { login, createAccount } = useAuthStore();
+    const { login, createAccount, loginWithOAuth } = useAuthStore();
     const [isLoading, setIsLoading] = React.useState(false);
     const [error, setError] = React.useState("");
+
+    const handleOAuth = async (provider: OAuthProvider) => {
+        setIsLoading(true);
+        setError("");
+        const res = await loginWithOAuth(provider);
+        if (res?.error) {
+            setError(res.error.message || "OAuth signup failed");
+            setIsLoading(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -125,6 +136,7 @@ export default function Register() {
                     <button
                         className="group/btn relative flex h-10 w-full items-center justify-start space-x-2 rounded-md bg-gray-50 px-4 font-medium text-black shadow-input dark:bg-zinc-900 dark:shadow-[0px_0px_1px_1px_var(--neutral-800)]"
                         type="button"
+                        onClick={() => handleOAuth(OAuthProvider.Google)}
                         disabled={isLoading}
                     >
                         <IconBrandGoogle className="h-4 w-4 text-neutral-800 dark:text-neutral-300" />
@@ -136,6 +148,7 @@ export default function Register() {
                     <button
                         className="group/btn relative flex h-10 w-full items-center justify-start space-x-2 rounded-md bg-gray-50 px-4 font-medium text-black shadow-input dark:bg-zinc-900 dark:shadow-[0px_0px_1px_1px_var(--neutral-800)]"
                         type="button"
+                        onClick={() => handleOAuth(OAuthProvider.Github)}
                         disabled={isLoading}
                     >
                         <IconBrandGithub className="h-4 w-4 text-neutral-800 dark:text-neutral-300" />
